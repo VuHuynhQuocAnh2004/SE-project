@@ -1,0 +1,99 @@
+// ==========================================================
+// SKELETON SCHEMA — mỗi người bổ sung field/model cho module mình
+// Auth (Vũ)      -> User
+// Games (Long)   -> Game, Developer
+// Cart (Anh)     -> Cart, CartItem
+// Checkout (Nhân)-> Order, OrderItem
+// ==========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- AUTH (Vũ) ----------
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("CUSTOMER") // CUSTOMER | DEVELOPER | ADMIN
+  createdAt DateTime @default(now())
+
+  // TODO (Vũ): add fullName, customerId, bankName, bankAccountNumber (masked)
+
+  cart   Cart?
+  orders Order[]
+}
+
+// ---------- GAMES (Long) ----------
+model Developer {
+  id      Int    @id @default(autoincrement())
+  company String
+
+  games Game[]
+}
+
+model Game {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  genre       String?
+  releaseDate DateTime @default(now())
+
+  developerId Int?
+  developer   Developer? @relation(fields: [developerId], references: [id])
+
+  // TODO (Long): add availability / stock status field
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+// ---------- CART (Anh) ----------
+model Cart {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+}
+
+model CartItem {
+  id     Int @id @default(autoincrement())
+  cartId Int
+  gameId Int
+
+  cart Cart @relation(fields: [cartId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([cartId, gameId])
+}
+
+// ---------- CHECKOUT (Nhân) ----------
+model Order {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  totalAmount Float
+  orderDate   DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  // TODO (Nhân): add confirmationCode, receiptEmail, payment relation
+}
+
+model OrderItem {
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  gameId  Int
+  price   Float
+
+  order Order @relation(fields: [orderId], references: [id])
+  game  Game  @relation(fields: [gameId], references: [id])
+}
